@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "availnet-agency": {
+      "type": "http",
+      "url": "https://agency.availnet.ai/mcp"
+    }
+  }
+}

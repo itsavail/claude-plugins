@@ -1,0 +1,14 @@
+{
+  "name": "availnet",
+  "description": "Claude plugins for Availnet",
+  "owner": {
+    "name": "Availnet"
+  },
+  "plugins": [
+    {
+      "name": "availnet-agency",
+      "source": "./plugins/availnet-agency",
+      "description": "Availnet Agency connector plus its usage skill: creators, rosters, inventory and Campaign Reports for talent agencies"
+    }
+  ]
+}

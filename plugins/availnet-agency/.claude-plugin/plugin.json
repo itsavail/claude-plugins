@@ -1,0 +1,14 @@
+{
+  "name": "availnet-agency",
+  "displayName": "Availnet Agency",
+  "version": "1.0.0",
+  "description": "Availnet Agency connector plus its usage skill: creators, rosters, inventory and Campaign Reports for talent agencies",
+  "author": {
+    "name": "Availnet"
+  },
+  "repository": "https://github.com/itsavail/claude-plugins",
+  "license": "MIT",
+  "keywords": ["availnet", "talent-agency", "creators", "influencer-marketing", "mcp"],
+  "icon": "./.claude-plugin/icon.png",
+  "privacyPolicyUrl": "https://www.availnet.ai/privacy-policy"
+}

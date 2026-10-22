@@ -1,0 +1,29 @@
+.claude-plugin/marketplace.json
+  s_39e37bfa061fb1::t_b77413a3e228b4 1-14
+LICENSE
+  s_39e37bfa061fb1::t_9cdc4b4e7d074a 1-21
+README.md
+  s_39e37bfa061fb1::t_989cf9599e8bbb 1-22
+plugins/availnet-agency/.claude-plugin/plugin.json
+  s_39e37bfa061fb1::t_c8cc565fe31a87 1-14
+plugins/availnet-agency/.mcp.json
+  s_39e37bfa061fb1::t_574d5fce3a0e11 1-8
+plugins/availnet-agency/skills/availnet-agency/SKILL.md
+  s_39e37bfa061fb1::t_cfab4a5723b455 1-216
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "fad6b82eb910540a33cae63081e8358f2a995021",
+  "prompts": {},
+  "sessions": {
+    "s_39e37bfa061fb1": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "47853fde-c41b-44df-bb30-ef37ef440f52",
+        "model": "unknown"
+      },
+      "human_author": "Ryan <ryan@itsavail.com>"
+    }
+  }
+}

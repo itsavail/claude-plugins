@@ -1,11 +1,11 @@
 ---
 name: availnet-agency
-description: Guides use of the Availnet Agency connector for a talent agency. Use when the user asks about their agency's creators in Availnet, adding a creator profile by handle or URL, creator discovery and search, audience or performance data, brand safety or past brand work, rosters and roster share links, upcoming integration or monthly DBS inventory and availability, recurring inventory rules, or Campaign Reports.
+description: Guides use of the Availnet Agency connector for a talent agency. Use when the user asks about their agency's creators in Availnet, adding a creator profile by handle or URL, editing a creator's profile, products, rates or marketplace listings, creator discovery and search, audience or performance data, brand safety or past brand work, rosters and roster share links, upcoming integration or monthly DBS inventory and availability, recurring inventory rules, or Campaign Reports.
 ---
 
 # Availnet Agency
 
-The Availnet Agency connector reads one talent agency's data in Availnet. It can also look up a public creator and add a creator profile, create a roster, refresh a roster's public share snapshot, create an empty inventory slot, change a slot's date, title or block, add a brand claim, create a recurring inventory rule, and update that rule's brand and rate. It acts as the signed-in user, for the one agency they chose when connecting, with only the permissions they allowed.
+The Availnet Agency connector reads one talent agency's data in Availnet. It can also look up a public creator and add a creator profile, edit a creator's profile, products, rates and marketplace listings, create a roster, refresh a roster's public share snapshot, create an empty inventory slot, change a slot's date, title, block or rate, add a brand claim, change a claim's role or remove it, create a recurring inventory rule, update that rule's brand and rate, and create, edit, refresh and reopen Campaign Reports. It acts as the signed-in user, for the one agency they chose when connecting, with only the permissions they allowed.
 
 ## Definitions / glossary
 
@@ -24,7 +24,7 @@ Call `agency_get_context` before any other tool. It returns:
 
 - `organization`: the agency you act for. Name it in answers so the user knows where the data came from.
 - `role`: admin, manager, member or viewer.
-- `capabilities[]`: `read`, `reports_read`, `reports_write`, `reports_create`, `rosters_write`, `availability_write`, `bookings_write` and `creators_write`, each with `allowed` and, when not allowed, a `reason`.
+- `capabilities[]`: `read`, `reports_read`, `reports_write`, `reports_create`, `reports_update`, `rosters_write`, `availability_write`, `bookings_write`, `creators_write` and `creators_update`, each with `allowed` and, when not allowed, a `reason`.
 
 When a capability is not allowed, don't call tools that need it. Explain instead:
 
@@ -44,6 +44,8 @@ One connection serves one agency. To work in another agency, the user reconnects
 | Look up a public creator by handle or URL before adding them | `agency_lookup_creator_profile` |
 | Add that looked-up creator, or decline them (a change; confirm first) | `agency_confirm_creator_profile` |
 | A link a creator opens to join and connect their channels (a change; confirm first) | `agency_get_creator_invite_link` |
+| A creator's products and rates, marketplace listings or content profile ids | `agency_get_creator` |
+| Edit a creator's name, bio, categories, keywords, brand work, products and rates, CPMs, units per month, marketplace listings or YouTube view sharing (a change; confirm first) | `agency_update_creator_profile` |
 | The agency's rosters | `agency_list_rosters` |
 | One roster and its creators | `agency_get_roster` |
 | A roster's public share link | `agency_get_roster_share_link` |
@@ -52,12 +54,18 @@ One connection serves one agency. To work in another agency, the user reconnects
 | Monthly inventory counts for a creator over any range | `agency_get_creator_availability` |
 | Individual upcoming inventory slots | `agency_list_inventory_slots` |
 | One slot's status, claims and revision | `agency_get_inventory_slot` |
+| An empty slot on a connected YouTube account (a change; confirm first) | `agency_create_inventory_slot` |
 | A brand claim on a slot (a change; confirm first) | `agency_add_inventory_claim` |
-| A slot's date, title or block (a change; confirm first) | `agency_update_inventory_slot` |
+| A claim's role on a slot (a change; confirm first) | `agency_set_inventory_claim_role` |
+| Remove a claim from a slot (a change; confirm first) | `agency_remove_inventory_claim` |
+| A slot's date, title, block or rate (a change; confirm first) | `agency_update_inventory_slot` |
 | Recurring inventory rules for one account | `agency_list_inventory_rules` |
 | A new recurring inventory rule (a change; confirm first) | `agency_create_inventory_rule` |
 | Change a recurring rule's brand and rate (a change; confirm first) | `agency_update_inventory_rule` |
-| Create one YouTube Campaign Report (a change; confirm first) | `agency_create_report` |
+| Create one YouTube or Instagram Campaign Report (a change; confirm first) | `agency_create_report` |
+| Edit a Campaign Report (a change; confirm first) | `agency_update_report` |
+| Refresh a live Campaign Report's numbers (a change; confirm first) | `agency_refresh_report` |
+| Reopen an expired Campaign Report (a change; confirm the expiration first) | `agency_reopen_report` |
 | The agency's Campaign Reports | `agency_list_reports` |
 | One Campaign Report's analytics | `agency_get_report` |
 | Supported report settings | `agency_get_report_configuration` |
@@ -102,7 +110,7 @@ A null metric means unknown, never zero.
 - Lookup has a small per-minute budget. On `rate_limited`, wait the stated seconds. `service_unavailable` means lookup is paused; retry shortly.
 - Show the user the display name and each channel: platform, handle, followers, and whether it is already in this agency. Ask whether to add the profile. People usually add every channel, so do not ask which ones to drop.
 - A channel with `already_in_agency: true` carries the existing `creator_id`. When every channel is already in the agency, the creator is already here: say so and read them with `agency_get_creator` instead of offering to add them.
-- If `creators_write` is not allowed with `missing_scope`, tell them to reconnect the Availnet Agency connector and allow Add creator profiles. Do not call lookup or confirm.
+- If `creators_write` is not allowed with `missing_scope`, tell them to reconnect the Availnet Agency connector and allow Add and edit creator profiles. Do not call lookup or confirm.
 - Pass `confirmation_token` through unchanged to `agency_confirm_creator_profile`. Never rebuild channel objects. The token lasts until `expires_at`. A `validation_failed` for an invalid or expired token means look the creator up again and reconfirm with the user.
 - `removed_channel_ids` stays empty unless they say they want to leave some channels out. Then pass those `channel_id`s, each once. An id not in the lookup is rejected. Empty keeps every channel that is not already in the agency. Channels already in the agency are skipped even if you leave them in, including a channel added after lookup.
 - If they say no, call confirm with `decision: "reject"`. That creates nothing.
@@ -118,14 +126,30 @@ A null metric means unknown, never zero.
 - It sends no email. Give the user `invite_url` to share with the creator. Anyone with the link can join as that creator, so tell them to send it only to the creator.
 - A `conflict` means the creator already joined Availnet and needs no invite.
 
+`agency_update_creator_profile` edits what the creator profile page in the agency portal can edit. It needs `creators_update` and an `idempotency_key`. Always confirm the exact change with the user before calling it. The edit is live at once, in the portal and in what marketplaces read.
+
+- Read first with `agency_get_creator`. It returns `products` (stored rates and `included_items`), `partner_marketplaces` and `profile_targets` (each with its full `recent_brand_work`).
+- Send only the fields to change. Omitted fields stay as they are. The last save wins, including over edits someone makes in the portal.
+- `stage_name` is the creator's name. `profile` edits one content profile: pass its `profile_id` from `profile_targets` with `biography`, `categories` (1 to 3), `keywords` (up to 3) or `recent_brand_work` (up to 10, replacing the list: to add a brand, send that target's `recent_brand_work` back with the new entry; if it is `null`, edit brand work in the portal). A `sponsorship_date` needs a time zone offset, such as `2026-05-01T00:00:00Z`.
+- `products` replaces the whole list in the order sent. Keep a product by sending its `id`, and send its `included_items` again: an omitted `included_items` saves as none. `[]` deletes every product and every marketplace listing. Prices are USD decimal strings such as `"1500"`.
+- `partner_listings` lists or unlists the creator per marketplace by `partner_grant_id`. Marketplaces you leave out stay as they are. Listing needs products. If `partner_marketplaces.enabled` is false, don't offer listing.
+- A `conflict` on listing means nothing in the request was saved. Follow its detail: the creator may have no products, the marketplace may no longer be enabled, or the agency keeps this creator's rates internal. Only for internal rates, tell the user to change pricing on the creator's profile in the agency portal, since the connector can't change that setting. Unlisting always works.
+- `account` edits one channel by `social_account_id`: `integration_cpm`, `dbs_cpm` and `units_per_month_override` (`null` returns to the computed estimate).
+- `channel_metrics_sharing` shows or hides YouTube views on the creator's public shares.
+- Profile images and pricing visibility can't be changed here; point the user to the portal.
+- Everything in one call saves together or not at all. `search_index_refresh: "retryable_failure"` means the edit saved but search re-indexing wasn't queued: retry the same key and payload. The same key and payload replay without saving twice while the replay is retained (24 hours by default); after that, the same key saves again and can overwrite newer edits.
+
 ## Which ID goes where
 
 | ID | Comes from | Pass it to |
 |---|---|---|
-| creator `creator_id` | list `creators[]`, search `items[]`, roster `members[]`, lookup `channels[]` when `already_in_agency` is true, confirm when `created` is true | `agency_get_creator`, `agency_get_creator_availability`, `agency_list_inventory_slots`, `agency_get_creator_invite_link`, search `excluded_creator_ids` |
+| creator `creator_id` | list `creators[]`, search `items[]`, roster `members[]`, lookup `channels[]` when `already_in_agency` is true, confirm when `created` is true | `agency_get_creator`, `agency_get_creator_availability`, `agency_list_inventory_slots`, `agency_get_creator_invite_link`, `agency_update_creator_profile`, search `excluded_creator_ids` |
 | `confirmation_token` | `agency_lookup_creator_profile` | `agency_confirm_creator_profile`, unchanged |
 | `channel_id` | lookup `channels[]` | `removed_channel_ids` only when the user wants that channel left out |
-| `social_account_id` | `social_accounts[]` on any creator | `agency_list_inventory_slots` as `creator_social_account_id` |
+| `social_account_id` | `social_accounts[]` on any creator | `agency_list_inventory_slots` as `creator_social_account_id`, `agency_update_creator_profile` `account` |
+| `profile_id` | `agency_get_creator` `profile_targets[]` | `agency_update_creator_profile` `profile` |
+| `partner_grant_id` | `agency_get_creator` `partner_marketplaces.listings[]` | `agency_update_creator_profile` `partner_listings` |
+| product `id` | `agency_get_creator` `products[]` | `agency_update_creator_profile` `products`, to keep that product |
 | `roster_id` | `agency_list_rosters`, `agency_create_roster` | `agency_get_roster`, `agency_get_roster_share_link`, `agency_refresh_roster_snapshot` |
 | slot `id` and `kind` | `agency_list_inventory_slots` | `agency_get_inventory_slot`, `agency_add_inventory_claim`, `agency_update_inventory_slot` as `slot_id` and `kind` |
 | report `id` | `agency_list_reports` | `agency_get_report` and `agency_get_report_share_link` as `report_id` |
@@ -167,11 +191,14 @@ Creator Profile IDs are not accepted; a creator ID that isn't this agency's answ
 
 ## Campaign Reports
 
-- `agency_create_report` needs `reports_create`, explicit `agency:read`, `agency:reports:read` and `agency:reports:write` consent, and live Analytics create permission. Confirm the one video, settings and public note with the user before creating. The report and its note are publicly addressable immediately; there is no private draft, publish step or email.
-- Send `platform: "youtube"`, `social_account_id`, exactly one `video_id`, `title`, supported `metrics`/`dimensions`, and a mandatory `idempotency_key`. Never send channel/publication metadata. Discovery gives the eligible account and video. Custom dates are UTC, live, increasing, at most 365 days; first-window snapshots need sufficiently old video. Expiry defaults to never.
+- `agency_create_report` needs `reports_create`, explicit `agency:read`, `agency:reports:read` and `agency:reports:write` consent, and live Analytics create permission. Confirm the YouTube videos (1–50) or Instagram reels/collected stories from one account, settings and public note with the user before creating. The report and its note are publicly addressable immediately; there is no private draft, publish step or email.
+- Send `platform: "youtube"`, `social_account_id`, `video_id` as one id or an array of 1–50 ids, `title`, supported `metrics`/`dimensions`, and a mandatory `idempotency_key`. Never send `video_ids` or channel/publication metadata. A string and a one-id array of that same id are the same request. Discovery gives the eligible account and videos. Duplicate ids collapse. Custom dates are UTC, live, increasing, at most 365 days. First 24 hours, 7 days and 28 days need exactly one video and a sufficiently old publish date. Since published starts at the earliest publish date. Expiry defaults to never.
 - The receipt means committed and queued, not generated. Keep its key and payload for safe retries within replay retention, 24 hours by default. A different payload with that key conflicts. The receipt includes `report_id`, pending status, decimal-string `revision`, disclosure and polling instructions, never a share URL or analytics. Poll `agency_get_report` sparingly for current state and selected metrics. Completed, failed, expired and channel_disconnected are terminal for this attempt; an operator may recover delivery failure on the same report later. Request a share URL separately only when asked.
-- Report revisions are exact decimal strings. This tool cannot edit, refresh, reopen or delete reports yet.
+- Report revisions are exact decimal strings. Pass the latest one as `expected_revision` when editing. Editing doesn't refresh or reopen a report: use `agency_refresh_report` or `agency_reopen_report`. The connector can't delete a report.
+- `agency_update_report` needs `reports_update`, explicit `agency:read`, `agency:reports:read` and `agency:reports:write` consent, and live Analytics update permission. Confirm the change with the user before calling it. Send only the fields to change: `title`, `brand`, `brand_domain`, `subtitle`, `public_campaign_note`, and supported metrics (`metrics` and `dimensions` on YouTube; `reels_metrics`, `story_metrics` and `dimensions` on Instagram). Account, media, dates and expiration are rejected. Only completed and failed reports can be edited. Pass the revision from the latest `agency_get_report` as `expected_revision`. A stale revision conflicts and writes nothing: read the report again and confirm before a new request. Keep the idempotency key and payload for retries within replay retention, 24 hours by default. A different payload with that key conflicts. A live metric change queues recomputation even during the manual refresh cooldown. Metadata-only and snapshot edits do not. `recomputation` is `queued` or `not_requested` and is separate from the report status. Expired and disconnected reports stay redacted. Poll `agency_get_report` for the new numbers. Do not invent a metric value.
+- `agency_refresh_report` and `agency_reopen_report` need `reports_update`, explicit `agency:read`, `agency:reports:read` and `agency:reports:write` consent, and live Analytics update permission. Pass the revision from the latest `agency_get_report` as `expected_revision` and confirm with the user first. Both need an `idempotency_key`. Reuse the same key and payload for retries within replay retention, 24 hours by default. A different payload with that key conflicts. Refresh works only for a live, completed or failed, unexpired report on a connected channel, six hours after its last refresh and below five consecutive failures. Reopen works only for a time-expired report and needs an `expiration_option` the user chose; a live report queues one refresh, a snapshot keeps its stored numbers. A refusal is a `conflict` with `eligibility.reason` (and `next_available_at` for a cooldown): tell the user why and when, do not retry in a loop. The receipt names the new revision and `refresh` (`queued` or `not_requested`), never analytics; poll `agency_get_report` sparingly. Reopening never restores a disconnected channel's data.
 
+- Instagram creation uses `platform: "instagram"`, `reel_ids` / `story_media_ids` and `reels_metrics` / `story_metrics`. Include at least one media item and a metric for each included type; omit metrics for absent types. Only `period: "lifetime"` is accepted; live reporting starts at the earliest publication instant. No date overrides or dimensions. Reel ownership requires fresh account identity and account-feed verification within a configurable 100-page budget. A `service_unavailable` means no creation when proof is incomplete; retry with the same key. Stories must already be collected.
 - Read configuration first. Only advertised metric/content combinations and units are supported; Instagram periods are lifetime only.
 - List eligible accounts, then media using their `social_account_id`. Require one `type`: `youtube_video`, `instagram_reel` or `instagram_story`.
 - One Instagram report can mix reels and collected stories from that account. Browse the two types in separate requests; story `id` is the provider selection ID, `tracking_id` identifies its stored collection.
@@ -212,5 +239,5 @@ A tool error carries a `code` and a request id.
 - Refer to creators by name and handle. Show IDs only when asked.
 - Link creators with `social_accounts[].url`.
 - Name the agency, and give `as_of` for inventory.
-- Never invent metrics, availability, contacts, rates or prices. The connector never returns contact details, rates, prices or CPM, except a slot's `price_override` and `cpm_override`: report those decimal strings, and say null when they are null. For anything else, say it isn't returned and point the user to Availnet.
+- Never invent metrics, availability, contacts, rates or prices. The connector never returns contact details, rates, prices or CPM, except the stored product rates in `agency_get_creator` `products` and a slot's `price_override` and `cpm_override`: report those values as returned, and say null when they are null. For anything else, say it isn't returned and point the user to Availnet.
 - When data is empty, unsupported, null or unavailable, say exactly that.

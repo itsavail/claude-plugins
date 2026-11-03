@@ -1,0 +1,21 @@
+plugins/availnet-agency/.claude-plugin/plugin.json
+  s_60b78f42488480::t_2c07eb7fc9f1d6 4
+plugins/availnet-agency/skills/availnet-agency/SKILL.md
+  s_60b78f42488480::t_07ff245cdd6baf 3,8,27,47-48,57,59-61,65-68,113,129-141,146,149-152,194-195,197-199,201
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "3b4346741279a18676f216599a3ea76dae67bba5",
+  "prompts": {},
+  "sessions": {
+    "s_60b78f42488480": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "80c3d2e8-3186-4e7a-b1f9-b3e5455fe926",
+        "model": "unknown"
+      },
+      "human_author": "Ryan <ryan@itsavail.com>"
+    }
+  }
+}

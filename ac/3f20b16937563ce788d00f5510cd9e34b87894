@@ -1,0 +1,19 @@
+plugins/availnet-agency/skills/availnet-agency/SKILL.md
+  s_4b6c7673751077::t_aa32d175a25c56 242
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "ac3f20b16937563ce788d00f5510cd9e34b87894",
+  "prompts": {},
+  "sessions": {
+    "s_4b6c7673751077": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "93dba1fe-8b34-4259-a23f-b7f78d83a15e",
+        "model": "unknown"
+      },
+      "human_author": "Ryan <ryan@itsavail.com>"
+    }
+  }
+}

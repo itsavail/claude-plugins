@@ -1,7 +1,7 @@
 {
   "name": "availnet-agency",
   "displayName": "Availnet Agency",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Availnet Agency connector plus its usage skill: creators, rosters, inventory and Campaign Reports for talent agencies",
   "author": {
     "name": "Availnet"

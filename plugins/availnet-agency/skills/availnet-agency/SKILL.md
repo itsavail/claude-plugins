@@ -239,5 +239,5 @@ A tool error carries a `code` and a request id.
 - Refer to creators by name and handle. Show IDs only when asked.
 - Link creators with `social_accounts[].url`.
 - Name the agency, and give `as_of` for inventory.
-- Never invent metrics, availability, contacts, rates or prices. The connector never returns contact details, rates, prices or CPM, except a slot's `price_override` and `cpm_override`: report those decimal strings, and say null when they are null. For anything else, say it isn't returned and point the user to Availnet.
+- Never invent metrics, availability, contacts, rates or prices. The connector never returns contact details, rates, prices or CPM, except the stored product rates in `agency_get_creator` `products` and a slot's `price_override` and `cpm_override`: report those values as returned, and say null when they are null. For anything else, say it isn't returned and point the user to Availnet.
 - When data is empty, unsupported, null or unavailable, say exactly that.
